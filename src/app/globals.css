@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply min-h-screen bg-vape-gradient text-white;
+  font-family: 'Inter', system-ui, sans-serif;
+}
