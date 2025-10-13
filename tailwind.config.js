@@ -1,17 +1,10 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: [
-    "./app/**/*.{js,ts,jsx,tsx}",
-    "./components/**/*.{js,ts,jsx,tsx}",
-  ],
+  content: ["./app/**/*.{js,ts,jsx,tsx}", "./components/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
       colors: {
-        brand: {
-          yellow: "#FFD700",
-          neon: "#39FF14",
-          purple: "#7C3AED",
-        },
+        brand: { yellow: "#FFD700", neon: "#39FF14", purple: "#7C3AED" },
       },
       backgroundImage: {
         "vape-gradient":

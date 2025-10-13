@@ -1,8 +1,30 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+:root {
+  --brand-yellow: #facc15;
+  --brand-bg: #0a0a0a;
+}
 
 body {
-  @apply min-h-screen bg-vape-gradient text-white;
-  font-family: 'Inter', system-ui, sans-serif;
+  background: radial-gradient(circle at top, #1a1a1a, #000000 80%);
+  color: white;
+  font-family: 'Inter', sans-serif;
 }
+
+.shadow-neon {
+  box-shadow: 0 0 10px rgba(250, 204, 21, 0.7),
+              0 0 20px rgba(250, 204, 21, 0.4);
+}
+
+.text-brand-yellow {
+  color: var(--brand-yellow);
+}
+
+.bg-brand-yellow {
+  background-color: var(--brand-yellow);
+}
+
+.border-brand-yellow {
+  border-color: var(--brand-yellow);
+}
+.drop-shadow { filter: drop-shadow(0 0 8px rgba(250, 204, 21, .25)); }
