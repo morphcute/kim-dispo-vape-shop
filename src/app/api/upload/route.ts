@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { isAdmin } from "@/lib/adminAuth";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export async function POST(req: Request) {
   if (!isAdmin(req)) return new NextResponse("Unauthorized", { status: 401 });
@@ -10,15 +14,24 @@ export async function POST(req: Request) {
   const file = form.get("file") as File | null;
   if (!file) return new NextResponse("No file", { status: 400 });
 
-  const bytes = Buffer.from(await file.arrayBuffer());
-  const uploadsDir = path.join(process.cwd(), "public", "uploads");
-  await mkdir(uploadsDir, { recursive: true });
+  // Convert file to buffer
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const fileName = `${Date.now()}-${file.name.replace(/[^\w.\-]/g, "_")}`;
 
-  const safeName = `${Date.now()}-${file.name.replace(/[^\w.\-]/g, "_")}`;
-  const dest = path.join(uploadsDir, safeName);
-  await writeFile(dest, bytes);
+  // Upload to Supabase Storage (replace "posters" with your bucket name)
+  const { error } = await supabase.storage
+    .from("posters")
+    .upload(fileName, buffer, {
+      contentType: file.type,
+      upsert: false,
+    });
 
-  // URL that the app can use directly in <img src="/uploads/..">
-  const url = `/uploads/${safeName}`;
-  return NextResponse.json({ url });
+  if (error) {
+    console.error("Upload failed:", error.message);
+    return new NextResponse("Upload failed", { status: 500 });
+  }
+
+  // Return the public URL for the uploaded file
+  const publicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/posters/${fileName}`;
+  return NextResponse.json({ url: publicUrl });
 }
