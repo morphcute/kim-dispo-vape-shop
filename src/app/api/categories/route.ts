@@ -2,9 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { isAdmin } from "@/lib/adminAuth";
 
+// GET - Public access for storefront
 export async function GET(req: Request) {
-  if (!isAdmin(req)) return new NextResponse("Unauthorized", { status: 401 });
-  
   try {
     const cats = await prisma.category.findMany({
       orderBy: { id: "asc" },
@@ -20,6 +19,7 @@ export async function GET(req: Request) {
   }
 }
 
+// POST - Admin only
 export async function POST(req: Request) {
   if (!isAdmin(req)) return new NextResponse("Unauthorized", { status: 401 });
   
