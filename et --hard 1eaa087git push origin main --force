@@ -1,0 +1,15 @@
+[33m34bff49[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m Revert to simple DATABASE_URL configuration
+[33m945c79c[m Add directUrl for Prisma connection pooling
+[33m55ccca6[m Fix: Make storefront endpoints public, keep admin endpoints protected
+[33m1eaa087[m Add error logging to categories endpoint
+[33me724a24[m Fix build script for production deployment
+[33m061c2c7[m Use SUPABASE_URL instead of NEXT_PUBLIC_SUPABASE_URL
+[33m082989d[m Add authentication checks to all admin API routes and display order totals
+[33mcec9f4f[m Add existing project as subfolder
+[33m76404a4[m Add feature: flavor selection logic
+[33md2c5544[m Fix: switch upload route to Supabase Storage
+[33m48fe018[m add prisma migration for supabase init
+[33mbf40d5e[m Fix: Add Prisma generate to build script
+[33m8c9007d[m Fix: Apply deployment config to next.config.mjs
+[33m64f0999[m Initial commit: Admin dashboard with order management
+[33ma9c751a[m Initial commit
