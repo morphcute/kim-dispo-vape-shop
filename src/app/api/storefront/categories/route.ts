@@ -10,7 +10,6 @@ export async function GET() {
     return NextResponse.json(categories);
   } catch (error) {
     console.error("Error fetching categories:", error);
-    // Return empty array instead of error object
-    return NextResponse.json([], { status: 500 });
+    return NextResponse.json({ error: "Failed to fetch categories" }, { status: 500 });
   }
 }
