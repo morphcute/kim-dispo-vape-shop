@@ -2,10 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { isAdmin } from "@/lib/adminAuth";
 
-// GET - Fetch brand details (Admin only)
+// GET - Public access for storefront
 export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }) {
-  if (!isAdmin(req)) return new NextResponse("Unauthorized", { status: 401 });
-  
   try {
     const { id } = await ctx.params;
     const brand = await prisma.brand.findUnique({
