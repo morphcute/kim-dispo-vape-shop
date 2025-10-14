@@ -1,17 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { isAdmin } from "@/lib/adminAuth";
 
 // ---------- GET all orders ----------
 export async function GET(req: Request) {
-  // ✅ FIX: Check if admin token exists in headers
-  const token = req.headers.get("x-admin-token");
-  
-  if (!token) {
-    console.error("❌ No admin token provided");
+  if (!isAdmin(req)) {
+    console.error("❌ Unauthorized access attempt");
     return new NextResponse("Unauthorized", { status: 401 });
   }
 
-  // ✅ FIX: Add more detailed error logging
   try {
     const orders = await prisma.order.findMany({
       orderBy: { id: "desc" },
