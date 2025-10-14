@@ -102,13 +102,34 @@ export default function AdminPage() {
     setFlavors(await r.json());
   }
 
-  async function fetchOrders() {
-    setOrdersLoading(true);
+  // Replace the fetchOrders function with this version that includes error logging:
+
+async function fetchOrders() {
+  setOrdersLoading(true);
+  try {
     const r = await fetch("/api/orders", { headers });
+    console.log("Orders response status:", r.status);
+    
+    if (!r.ok) {
+      console.error("Failed to fetch orders:", r.status, r.statusText);
+      const errorText = await r.text();
+      console.error("Error response:", errorText);
+      setOrders([]);
+      return;
+    }
+    
+    const data = await r.json();
+    console.log("Orders fetched successfully:", data);
+    console.log("Number of orders:", data.length);
+    
+    setOrders(data);
+  } catch (err) {
+    console.error("Exception while fetching orders:", err);
+    setOrders([]);
+  } finally {
     setOrdersLoading(false);
-    if (!r.ok) return setOrders([]);
-    setOrders(await r.json());
   }
+}
 
   async function addCategory() {
     if (!catName || !catSlug) return;
