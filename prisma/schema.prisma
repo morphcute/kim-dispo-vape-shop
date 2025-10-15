@@ -34,12 +34,12 @@ model Brand {
 }
 
 model Flavor {
-  id            Int     @id @default(autoincrement())
-  name          String
-  code          String
-  stock         Int     @default(0)
-  costPrice     Float   @default(0)
-  sellingPrice  Float   @default(0)
+  id           Int     @id @default(autoincrement())
+  name         String
+  code         String
+  stock        Int     @default(0)
+  costPrice    Float   @default(0)
+  sellingPrice Float   @default(0)
 
   brandId Int
   brand   Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
@@ -52,12 +52,14 @@ model Flavor {
 }
 
 model Order {
-  id        Int         @id @default(autoincrement())
-  customer  String
-  status    String      @default("PREPARING")
-  items     OrderItem[]
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  id            Int         @id @default(autoincrement())
+  customer      String
+  address       String      // NEW: Customer delivery address
+  paymentMethod String      @default("cod") // NEW: Payment method used
+  status        String      @default("PREPARING")
+  items         OrderItem[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 }
 
 model OrderItem {
