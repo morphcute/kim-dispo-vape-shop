@@ -131,8 +131,15 @@ export async function POST(req: Request) {
     console.log(`✅ Created order #${order.id} for ${customer} | Payment: ${paymentMethod} | Address: ${address.substring(0, 30)}...`);
     return NextResponse.json(order);
     
-  } catch (e) {
-    console.error("❌ POST order error:", e);
-    return new NextResponse("Server error", { status: 500 });
-  }
+  } catch (e: any) {
+  console.error("❌ Prisma GET orders error:", e.message);
+  console.error("🔍 Full error:", e);
+  return new NextResponse(
+    JSON.stringify({
+      error: "Server error",
+      details: e.message,
+    }),
+    { status: 500, headers: { "Content-Type": "application/json" } }
+  );
+}
 }
