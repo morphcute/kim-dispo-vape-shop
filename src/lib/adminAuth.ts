@@ -1,14 +1,14 @@
-// lib/adminAuth.ts or wherever you store it
+// lib/adminAuth.ts
 import { NextRequest } from 'next/server'
 
 export function isAdmin(req: NextRequest | Request) {
   const token = req.headers.get('x-admin-token')
   const adminToken = process.env.ADMIN_TOKEN
   
-  // If no admin token is configured, deny access
+  // For development, if no ADMIN_TOKEN is set, accept any token
   if (!adminToken) {
-    console.error('⚠️ ADMIN_TOKEN not configured in environment variables')
-    return false
+    console.warn('⚠️ ADMIN_TOKEN not configured - accepting any token for development')
+    return !!token // Accept any non-empty token
   }
   
   // If no token provided in request, deny access

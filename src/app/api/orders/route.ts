@@ -53,44 +53,99 @@ export async function POST(req: Request) {
     // Validation
     if (!customer || !customer.trim()) {
       console.error("❌ Missing customer name");
-      return new NextResponse("Customer name is required", { status: 400 });
+      return NextResponse.json({ error: "Customer name is required" }, { status: 400 });
     }
 
-    // Address is optional for backward compatibility, but recommended for new orders
-    const orderAddress = address && address.trim() ? address.trim() : "No address provided";
+    if (customer.trim().length < 3) {
+      console.error("❌ Customer name too short");
+      return NextResponse.json({ error: "Customer name must be at least 3 characters" }, { status: 400 });
+    }
+
+    // Address validation
+    if (!address || !address.trim()) {
+      console.error("❌ Missing address");
+      return NextResponse.json({ error: "Delivery address is required" }, { status: 400 });
+    }
+
+    if (address.trim().length < 10) {
+      console.error("❌ Address too short");
+      return NextResponse.json({ error: "Please enter a complete address (at least 10 characters)" }, { status: 400 });
+    }
+
+    const orderAddress = address.trim();
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       console.error("❌ Invalid or empty items array");
-      return new NextResponse("Order must contain at least one item", { status: 400 });
+      return NextResponse.json({ error: "Order must contain at least one item" }, { status: 400 });
     }
 
-    // Validate payment method
+    // Validate payment method - FIXED: Accept all payment methods including 'gcash' for QR Ph
     const validPaymentMethods = ['gcash', 'paymaya', 'grab_pay', 'cod'];
-    if (!validPaymentMethods.includes(paymentMethod)) {
+    const normalizedPaymentMethod = paymentMethod.toLowerCase();
+    
+    if (!validPaymentMethods.includes(normalizedPaymentMethod)) {
       console.error("❌ Invalid payment method:", paymentMethod);
-      return new NextResponse("Invalid payment method", { status: 400 });
+      return NextResponse.json({ 
+        error: `Invalid payment method: ${paymentMethod}. Accepted methods: ${validPaymentMethods.join(', ')}` 
+      }, { status: 400 });
     }
 
-    // 1) Check stock for all items
+    // 1) Check stock for all items and calculate total
+    let orderTotal = 0;
+    const flavorDetails = [];
+
     for (const i of items) {
-      const flavor = await prisma.flavor.findUnique({ where: { id: i.flavorId } });
+      if (!i.flavorId || !i.quantity || i.quantity <= 0) {
+        console.error("❌ Invalid item data:", i);
+        return NextResponse.json({ 
+          error: "Each item must have a valid flavorId and quantity" 
+        }, { status: 400 });
+      }
+
+      const flavor = await prisma.flavor.findUnique({ 
+        where: { id: i.flavorId },
+        include: {
+          brand: {
+            select: { name: true }
+          }
+        }
+      });
+
       if (!flavor) {
         console.error(`❌ Flavor not found: flavorId=${i.flavorId}`);
-        return new NextResponse(`Product not found (ID: ${i.flavorId})`, { status: 400 });
+        return NextResponse.json({ 
+          error: `Product not found (ID: ${i.flavorId})` 
+        }, { status: 400 });
       }
+
       if (flavor.stock < i.quantity) {
         console.error(`❌ Not enough stock: flavorId=${i.flavorId}, requested=${i.quantity}, available=${flavor.stock}`);
-        return new NextResponse(`Not enough stock for ${flavor.name}. Available: ${flavor.stock}`, { status: 400 });
+        return NextResponse.json({ 
+          error: `Not enough stock for ${flavor.name}. Available: ${flavor.stock}` 
+        }, { status: 400 });
       }
+
+      // Calculate total for this item
+      const itemTotal = (flavor.sellingPrice || 0) * i.quantity;
+      orderTotal += itemTotal;
+      
+      flavorDetails.push({
+        name: flavor.name,
+        brand: flavor.brand.name,
+        quantity: i.quantity,
+        price: flavor.sellingPrice,
+        subtotal: itemTotal
+      });
     }
 
-    // 2) Create order with address and payment method
+    // 2) Create order with address, payment method, and total
     const order = await prisma.order.create({
       data: {
         customer: customer.trim(),
-        address: address.trim(),
-        paymentMethod: paymentMethod,
+        address: orderAddress,
+        paymentMethod: normalizedPaymentMethod,
         status: "PREPARING",
+        Total: orderTotal,
         items: {
           create: items.map((i: any) => ({
             flavorId: i.flavorId,
@@ -106,6 +161,7 @@ export async function POST(req: Request) {
                 name: true,
                 code: true,
                 sellingPrice: true,
+                costPrice: true,
                 brand: {
                   select: {
                     name: true,
@@ -129,18 +185,21 @@ export async function POST(req: Request) {
       });
     }
 
-    console.log(`✅ Created order #${order.id} for ${customer} | Payment: ${paymentMethod} | Address: ${address.substring(0, 30)}...`);
+    console.log(`✅ Created order #${order.id}`);
+    console.log(`   Customer: ${customer}`);
+    console.log(`   Total: ₱${orderTotal.toFixed(2)}`);
+    console.log(`   Payment: ${normalizedPaymentMethod.toUpperCase()}`);
+    console.log(`   Address: ${orderAddress.substring(0, 50)}...`);
+    console.log(`   Items: ${flavorDetails.length} products`);
+    
     return NextResponse.json(order);
     
-  } catch (e: any) {
-  console.error("❌ Prisma GET orders error:", e.message);
-  console.error("🔍 Full error:", e);
-  return new NextResponse(
-    JSON.stringify({
-      error: "Server error",
-      details: e.message,
-    }),
-    { status: 500, headers: { "Content-Type": "application/json" } }
-  );
-}
+  } catch (e) {
+    console.error("❌ POST order error:", e);
+    const errorMessage = e instanceof Error ? e.message : "Server error";
+    return NextResponse.json({ 
+      error: errorMessage,
+      details: "An unexpected error occurred while creating the order" 
+    }, { status: 500 });
+  }
 }

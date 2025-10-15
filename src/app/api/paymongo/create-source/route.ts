@@ -23,9 +23,17 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!type || !['gcash', 'paymaya', 'grab_pay'].includes(type)) {
+    // PayMongo valid source types (based on their API documentation)
+    const paymongoSourceTypes: Record<string, string> = {
+      'gcash': 'gcash',
+      'paymaya': 'paymaya', 
+      'grab_pay': 'grab_pay',
+      'qrph': 'gcash', // QR Ph uses gcash source type
+    };
+
+    if (!type || !paymongoSourceTypes[type]) {
       return NextResponse.json(
-        { error: 'Invalid payment method' },
+        { error: `Invalid payment method: ${type}. Accepted: gcash, paymaya, grab_pay, qrph` },
         { status: 400 }
       );
     }
@@ -33,9 +41,13 @@ export async function POST(req: Request) {
     // PayMongo requires amount in cents (₱100 = 10000 cents)
     const amountInCents = Math.round(amount * 100);
 
+    // Map frontend type to PayMongo source type
+    const paymongoType = paymongoSourceTypes[type];
+
     console.log('Creating PayMongo source:', {
+      originalType: type,
+      paymongoType: paymongoType,
       amount: amountInCents,
-      type,
       description
     });
 
@@ -54,9 +66,9 @@ export async function POST(req: Request) {
               success: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/cart/payment/success`,
               failed: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/cart/payment/failed`,
             },
-            type: type,
+            type: paymongoType, // Use the mapped PayMongo type
             currency: 'PHP',
-            description: description,
+            description: description || 'Order Payment',
           },
         },
       }),
@@ -72,10 +84,20 @@ export async function POST(req: Request) {
       });
 
       // Extract error message from PayMongo response
-      let errorMessage = 'Failed to create payment source';
+      let errorMessage = 'Failed to create payment';
       
       if (data.errors && Array.isArray(data.errors) && data.errors.length > 0) {
-        errorMessage = data.errors[0].detail || data.errors[0].code || errorMessage;
+        const error = data.errors[0];
+        errorMessage = error.detail || error.code || errorMessage;
+        
+        // Provide user-friendly error messages
+        if (errorMessage.includes('not allowed') || errorMessage.includes('Organization')) {
+          errorMessage = 'This payment method requires business verification. Please use Cash on Delivery instead.';
+        } else if (errorMessage.includes('invalid') && errorMessage.includes('source_type')) {
+          errorMessage = 'Payment method temporarily unavailable. Please try Cash on Delivery.';
+        } else if (errorMessage.includes('amount')) {
+          errorMessage = 'Invalid payment amount. Please check your cart total.';
+        }
       } else if (data.error) {
         errorMessage = data.error;
       }
@@ -89,11 +111,16 @@ export async function POST(req: Request) {
       );
     }
 
-    console.log('PayMongo source created successfully:', data.data.id);
+    console.log('✅ PayMongo source created successfully:', {
+      id: data.data.id,
+      type: data.data.attributes.type,
+      status: data.data.attributes.status
+    });
+    
     return NextResponse.json(data);
 
   } catch (error) {
-    console.error('Payment creation error:', error);
+    console.error('❌ Payment creation error:', error);
     return NextResponse.json(
       { 
         error: 'Internal server error',

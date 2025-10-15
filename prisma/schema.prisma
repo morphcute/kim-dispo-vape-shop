@@ -57,6 +57,7 @@ model Order {
   address       String      // NEW: Customer delivery address
   paymentMethod String      @default("cod") // NEW: Payment method used
   status        String      @default("PREPARING")
+  Total         Float       @default(0) // ✅ Add this
   items         OrderItem[]
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
