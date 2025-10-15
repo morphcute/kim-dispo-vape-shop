@@ -19,6 +19,7 @@ type OrderItemRow = {
   flavor: { 
     name: string; 
     code: string;
+    costPrice: number;  
     sellingPrice: number;
     brand?: { 
       name: string;
@@ -538,6 +539,17 @@ export default function AdminPage() {
     f.code.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const totalProfit = orders
+    .filter(o => o.status === "DELIVERED")
+    .reduce((sum, o) => {
+      return sum + o.items.reduce((itemSum, item) => {
+        const cost = item.flavor.costPrice || 0;
+        const sell = item.flavor.sellingPrice || 0;
+        const profit = (sell - cost) * item.quantity;
+        return itemSum + profit;
+      }, 0);
+    }, 0);
+
   return (
     <>
       {/* Modal */}
@@ -595,21 +607,21 @@ export default function AdminPage() {
           <>
             {/* Header */}
             <div className="sticky top-0 z-50 bg-black/95 backdrop-blur-xl border-b border-yellow-600/30 shadow-2xl">
-              <div className="max-w-7xl mx-auto px-6 py-4">
+              <div className="max-w-7xl mx-auto px-4 py-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl flex items-center justify-center">
-                      <ShoppingBag className="w-6 h-6 text-black" />
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl flex items-center justify-center">
+                      <ShoppingBag className="w-5 h-5 text-black" />
                     </div>
                     <div>
-                      <h1 className="text-2xl font-black text-white">KIM DISPO</h1>
-                      <p className="text-sm text-gray-400">Admin Dashboard</p>
+                      <h1 className="text-xl font-black text-white">KIM DISPO</h1>
+                      <p className="text-xs text-gray-400">Admin Dashboard</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="hidden md:flex items-center gap-2 bg-gray-800/50 px-4 py-2 rounded-lg">
+                    <div className="hidden md:flex items-center gap-2 bg-gray-800/50 px-3 py-1.5 rounded-lg">
                       <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                      <span className="text-sm text-gray-400">Online</span>
+                      <span className="text-xs text-gray-400">Online</span>
                     </div>
                     <button
                       onClick={() => {
@@ -617,7 +629,7 @@ export default function AdminPage() {
                           handleUnauthorized();
                         }
                       }}
-                      className="px-4 py-2 bg-red-600 hover:bg-red-500 rounded-lg text-sm font-semibold transition"
+                      className="px-3 py-1.5 bg-red-600 hover:bg-red-500 rounded-lg text-xs font-semibold transition"
                     >
                       Logout
                     </button>
@@ -627,58 +639,69 @@ export default function AdminPage() {
             </div>
 
             {/* Stats Cards */}
-            <div className="max-w-7xl mx-auto px-6 py-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl p-6 shadow-xl">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                      <DollarSign className="w-6 h-6" />
+            <div className="max-w-7xl mx-auto px-4 py-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
+                <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl p-4 shadow-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+                      <DollarSign className="w-4 h-4" />
                     </div>
-                    <TrendingUp className="w-5 h-5 text-white/60" />
+                    <TrendingUp className="w-4 h-4 text-white/60" />
                   </div>
-                  <div className="text-3xl font-black mb-1">₱{totalRevenue.toFixed(2)}</div>
-                  <div className="text-sm text-blue-200">Total Revenue</div>
+                  <div className="text-xl font-black mb-0.5">₱{totalRevenue.toFixed(2)}</div>
+                  <div className="text-xs text-blue-200">Total Revenue</div>
                 </div>
 
-                <div className="bg-gradient-to-br from-purple-600 to-purple-800 rounded-2xl p-6 shadow-xl">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                      <ShoppingCart className="w-6 h-6" />
+                <div className="bg-gradient-to-br from-emerald-600 to-emerald-800 rounded-xl p-4 shadow-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+                      <TrendingUp className="w-4 h-4" />
                     </div>
-                    <BarChart3 className="w-5 h-5 text-white/60" />
+                    <DollarSign className="w-4 h-4 text-white/60" />
                   </div>
-                  <div className="text-3xl font-black mb-1">{totalOrders}</div>
-                  <div className="text-sm text-purple-200">Total Orders</div>
+                  <div className="text-xl font-black mb-0.5">₱{totalProfit.toFixed(2)}</div>
+                  <div className="text-xs text-emerald-200">Total Profit</div>
                 </div>
 
-                <div className="bg-gradient-to-br from-yellow-600 to-orange-600 rounded-2xl p-6 shadow-xl">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                      <Package className="w-6 h-6" />
+                <div className="bg-gradient-to-br from-purple-600 to-purple-800 rounded-xl p-4 shadow-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+                      <ShoppingCart className="w-4 h-4" />
                     </div>
-                    <Users className="w-5 h-5 text-white/60" />
+                    <BarChart3 className="w-4 h-4 text-white/60" />
                   </div>
-                  <div className="text-3xl font-black mb-1">{preparingOrders}</div>
-                  <div className="text-sm text-yellow-200">Preparing</div>
+                  <div className="text-xl font-black mb-0.5">{totalOrders}</div>
+                  <div className="text-xs text-purple-200">Total Orders</div>
                 </div>
 
-                <div className="bg-gradient-to-br from-green-600 to-green-800 rounded-2xl p-6 shadow-xl">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                      <Box className="w-6 h-6" />
+                <div className="bg-gradient-to-br from-yellow-600 to-orange-600 rounded-xl p-4 shadow-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+                      <Package className="w-4 h-4" />
                     </div>
-                    <TrendingUp className="w-5 h-5 text-white/60" />
+                    <Users className="w-4 h-4 text-white/60" />
                   </div>
-                  <div className="text-3xl font-black mb-1">{totalProducts}</div>
-                  <div className="text-sm text-green-200">Total Stock</div>
+                  <div className="text-xl font-black mb-0.5">{preparingOrders}</div>
+                  <div className="text-xs text-yellow-200">Preparing</div>
+                </div>
+
+                <div className="bg-gradient-to-br from-green-600 to-green-800 rounded-xl p-4 shadow-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+                      <Box className="w-4 h-4" />
+                    </div>
+                    <TrendingUp className="w-4 h-4 text-white/60" />
+                  </div>
+                  <div className="text-xl font-black mb-0.5">{totalProducts}</div>
+                  <div className="text-xs text-green-200">Total Stock</div>
                 </div>
               </div>
 
               {/* Tabs */}
-              <div className="mb-8 bg-gray-800/30 backdrop-blur-sm rounded-2xl p-2 border border-gray-700">
-                <div className="flex gap-2 overflow-x-auto">
+              <div className="mb-4 bg-gray-800/30 backdrop-blur-sm rounded-xl p-1.5 border border-gray-700">
+                <div className="flex gap-1.5 overflow-x-auto">
                   {[
-                    { key: "catalog", label: "Product Catalog", icon: Package },
+                    { key: "catalog", label: "Catalog", icon: Package },
                     { key: "orders", label: `Orders (${preparingOrders})`, icon: ShoppingCart },
                     { key: "shipped", label: `Shipped (${orders.filter(o => o.status === "SHIPPED").length})`, icon: TrendingUp },
                     { key: "delivered", label: `Delivered (${orders.filter(o => o.status === "DELIVERED").length})`, icon: Box }
@@ -686,13 +709,13 @@ export default function AdminPage() {
                     <button
                       key={key}
                       onClick={() => setActiveTab(key as any)}
-                      className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold whitespace-nowrap transition-all ${
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold whitespace-nowrap transition-all text-sm ${
                         activeTab === key
                           ? "bg-gradient-to-r from-yellow-500 to-orange-500 text-black shadow-lg"
                           : "text-gray-400 hover:text-white hover:bg-gray-700/50"
                       }`}
                     >
-                      <Icon className="w-5 h-5" />
+                      <Icon className="w-4 h-4" />
                       {label}
                     </button>
                   ))}
@@ -701,32 +724,32 @@ export default function AdminPage() {
 
               {/* Content */}
               {activeTab === "catalog" && (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                   {/* Categories */}
-                  <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl border border-gray-700 p-6">
-                    <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-                      <Package className="w-5 h-5 text-yellow-500" />
+                  <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 p-4">
+                    <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+                      <Package className="w-4 h-4 text-yellow-500" />
                       Categories
                     </h2>
                     
-                    <div className="space-y-3 mb-6">
+                    <div className="space-y-2 mb-4">
                       <input
                         value={catName}
                         onChange={(e) => setCatName(e.target.value)}
                         placeholder="Category name"
-                        className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition"
+                        className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition"
                       />
                       <input
                         value={catSlug}
                         onChange={(e) => setCatSlug(e.target.value)}
                         placeholder="slug-name"
-                        className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition"
+                        className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition"
                       />
                       <button 
                         onClick={addCategory}
-                        className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 text-black font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2"
+                        className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 text-black font-bold py-2 rounded-lg transition-all flex items-center justify-center gap-2 text-sm"
                       >
-                        <Plus className="w-5 h-5" />
+                        <Plus className="w-4 h-4" />
                         Add Category
                       </button>
                     </div>
@@ -736,20 +759,20 @@ export default function AdminPage() {
                         <div key={c.id} className="flex gap-2">
                           <button
                             onClick={() => handlePickCategory(c)}
-                            className={`flex-1 text-left px-4 py-3 rounded-xl transition-all flex items-center justify-between ${
+                            className={`flex-1 text-left px-3 py-2 rounded-lg transition-all flex items-center justify-between text-sm ${
                               selectedCat?.id === c.id
                                 ? "bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-bold shadow-lg"
                                 : "bg-gray-900 hover:bg-gray-800 text-white"
                             }`}
                           >
                             <span>{c.name}</span>
-                            <ChevronRight className="w-5 h-5" />
+                            <ChevronRight className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => deleteCategory(c.id)}
-                            className="px-4 py-3 bg-red-600 hover:bg-red-500 rounded-xl transition"
+                            className="px-3 py-2 bg-red-600 hover:bg-red-500 rounded-lg transition"
                           >
-                            <Trash2 className="w-5 h-5" />
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       ))}
@@ -757,25 +780,25 @@ export default function AdminPage() {
                   </div>
 
                   {/* Brands */}
-                  <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl border border-gray-700 p-6">
-                    <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-                      <ShoppingBag className="w-5 h-5 text-yellow-500" />
+                  <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 p-4">
+                    <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+                      <ShoppingBag className="w-4 h-4 text-yellow-500" />
                       {selectedCat ? `Brands in ${selectedCat.name}` : "Select a category"}
                     </h2>
 
                     {selectedCat && (
                       <>
-                        <div className="space-y-3 mb-6">
+                        <div className="space-y-2 mb-4">
                           <input
                             value={brandName}
                             onChange={(e) => setBrandName(e.target.value)}
                             placeholder="Brand name"
-                            className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition"
+                            className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition"
                           />
                           <label className="block">
-                            <div className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 cursor-pointer hover:border-yellow-500 transition flex items-center gap-2">
-                              <Upload className="w-5 h-5 text-gray-400" />
-                              <span className="text-gray-400 text-sm">
+                            <div className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 cursor-pointer hover:border-yellow-500 transition flex items-center gap-2">
+                              <Upload className="w-4 h-4 text-gray-400" />
+                              <span className="text-gray-400 text-xs">
                                 {posterFile ? posterFile.name : "Upload poster"}
                               </span>
                             </div>
@@ -788,35 +811,35 @@ export default function AdminPage() {
                           </label>
                           <button 
                             onClick={addBrand}
-                            className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 text-black font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2"
+                            className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 text-black font-bold py-2 rounded-lg transition-all flex items-center justify-center gap-2 text-sm"
                           >
-                            <Plus className="w-5 h-5" />
+                            <Plus className="w-4 h-4" />
                             Add Brand
                           </button>
                         </div>
 
-                        <div className="space-y-3 max-h-96 overflow-y-auto">
+                        <div className="space-y-2 max-h-96 overflow-y-auto">
                           {brands.map((b) => (
-                            <div key={b.id} className="bg-gray-900 rounded-xl p-4">
-                              <div className="flex justify-between items-start mb-3">
+                            <div key={b.id} className="bg-gray-900 rounded-lg p-3">
+                              <div className="flex justify-between items-start mb-2">
                                 <div className="flex-1">
-                                  <div className="font-bold text-lg">{b.name}</div>
-                                  <div className="text-xs text-gray-500 mt-1">
+                                  <div className="font-bold text-sm">{b.name}</div>
+                                  <div className="text-xs text-gray-500 mt-0.5">
                                     {b.poster ? "✓ Has poster" : "No poster"}
                                   </div>
                                 </div>
                                 <button
                                   onClick={() => deleteBrand(b.id)}
-                                  className="text-red-500 hover:text-red-400 p-2"
+                                  className="text-red-500 hover:text-red-400 p-1"
                                 >
-                                  <Trash2 className="w-5 h-5" />
+                                  <Trash2 className="w-4 h-4" />
                                 </button>
                               </div>
                               <div className="flex gap-2">
                                 <label className="flex-1">
-                                  <div className="bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-3 py-2 cursor-pointer transition flex items-center gap-2">
-                                    <Upload className="w-4 h-4 text-gray-400" />
-                                    <span className="text-xs text-gray-400">Update poster</span>
+                                  <div className="bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-2 py-1.5 cursor-pointer transition flex items-center gap-1">
+                                    <Upload className="w-3 h-3 text-gray-400" />
+                                    <span className="text-xs text-gray-400">Update</span>
                                   </div>
                                   <input
                                     type="file"
@@ -830,14 +853,14 @@ export default function AdminPage() {
                                 </label>
                                 <button
                                   onClick={() => handlePickBrand(b)}
-                                  className={`px-4 py-2 rounded-lg transition flex items-center gap-2 ${
+                                  className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1 text-xs ${
                                     selectedBrand?.id === b.id
                                       ? "bg-yellow-500 text-black font-bold"
                                       : "bg-gray-800 hover:bg-gray-700 text-white"
                                   }`}
                                 >
                                   Flavors
-                                  <ChevronRight className="w-4 h-4" />
+                                  <ChevronRight className="w-3 h-3" />
                                 </button>
                               </div>
                             </div>
@@ -848,26 +871,26 @@ export default function AdminPage() {
                   </div>
 
                   {/* Flavors */}
-                  <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl border border-gray-700 p-6">
-                    <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-                      <Box className="w-5 h-5 text-yellow-500" />
+                  <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 p-4">
+                    <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+                      <Box className="w-4 h-4 text-yellow-500" />
                       {selectedBrand ? `Flavors - ${selectedBrand.name}` : "Select a brand"}
                     </h2>
 
                     {selectedBrand && (
                       <>
-                        <div className="space-y-3 mb-6">
+                        <div className="space-y-2 mb-4">
                           <input
                             value={flName}
                             onChange={(e) => setFlName(e.target.value)}
                             placeholder="Flavor Name"
-                            className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition"
+                            className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition"
                           />
                           <input
                             value={flCode}
                             onChange={(e) => setFlCode(e.target.value)}
                             placeholder="Flavor Code"
-                            className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition"
+                            className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition"
                           />
                           <div className="grid grid-cols-3 gap-2">
                             <input
@@ -875,7 +898,7 @@ export default function AdminPage() {
                               value={flStock === 0 ? "" : flStock}
                               onChange={(e) => setFlStock(Number(e.target.value))}
                               placeholder="Stock"
-                              className="w-full bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition"
+                              className="w-full bg-gray-900 border border-gray-700 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition"
                             />
                             <input
                               type="number"
@@ -883,7 +906,7 @@ export default function AdminPage() {
                               value={flCostPrice === 0 ? "" : flCostPrice}
                               onChange={(e) => setFlCostPrice(Number(e.target.value))}
                               placeholder="Cost"
-                              className="w-full bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition"
+                              className="w-full bg-gray-900 border border-gray-700 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition"
                             />
                             <input
                               type="number"
@@ -891,25 +914,25 @@ export default function AdminPage() {
                               value={flSellingPrice === 0 ? "" : flSellingPrice}
                               onChange={(e) => setFlSellingPrice(Number(e.target.value))}
                               placeholder="Sell"
-                              className="w-full bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition"
+                              className="w-full bg-gray-900 border border-gray-700 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition"
                             />
                           </div>
                           <button 
                             onClick={addFlavor}
-                            className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 text-black font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2"
+                            className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 text-black font-bold py-2 rounded-lg transition-all flex items-center justify-center gap-2 text-sm"
                           >
-                            <Plus className="w-5 h-5" />
+                            <Plus className="w-4 h-4" />
                             Add Flavor
                           </button>
                         </div>
 
-                        <div className="relative mb-4">
-                          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                        <div className="relative mb-3">
+                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3" />
                           <input
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder="Search flavors..."
-                            className="w-full bg-gray-900 border border-gray-700 rounded-xl pl-11 pr-4 py-2 text-sm focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition"
+                            className="w-full bg-gray-900 border border-gray-700 rounded-lg pl-9 pr-3 py-1.5 text-xs focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/20 transition"
                           />
                         </div>
 
@@ -917,28 +940,28 @@ export default function AdminPage() {
                           {filteredFlavors.map((f) => {
                             const isEditing = editingId === f.id;
                             return (
-                              <div key={f.id} className="bg-gray-900 rounded-xl p-3">
+                              <div key={f.id} className="bg-gray-900 rounded-lg p-2.5">
                                 {isEditing ? (
                                   <div className="space-y-2">
                                     <input
                                       value={editName}
                                       onChange={(e) => setEditName(e.target.value)}
-                                      className="w-full bg-black border border-gray-700 rounded-lg px-3 py-2 text-sm"
+                                      className="w-full bg-black border border-gray-700 rounded-lg px-2 py-1.5 text-xs"
                                       placeholder="Name"
                                     />
                                     <input
                                       value={editCode}
                                       onChange={(e) => setEditCode(e.target.value)}
-                                      className="w-full bg-black border border-gray-700 rounded-lg px-3 py-2 text-sm"
+                                      className="w-full bg-black border border-gray-700 rounded-lg px-2 py-1.5 text-xs"
                                       placeholder="Code"
                                     />
-                                    <div className="grid grid-cols-3 gap-2">
+                                    <div className="grid grid-cols-3 gap-1.5">
                                       <input
                                         type="number"
                                         value={editStock}
                                         onChange={(e) => setEditStock(Number(e.target.value))}
                                         placeholder="Stock"
-                                        className="w-full bg-black border border-gray-700 rounded-lg px-2 py-1 text-sm"
+                                        className="w-full bg-black border border-gray-700 rounded-lg px-2 py-1 text-xs"
                                       />
                                       <input
                                         type="number"
@@ -946,7 +969,7 @@ export default function AdminPage() {
                                         value={editCostPrice}
                                         onChange={(e) => setEditCostPrice(Number(e.target.value))}
                                         placeholder="Cost"
-                                        className="w-full bg-black border border-gray-700 rounded-lg px-2 py-1 text-sm"
+                                        className="w-full bg-black border border-gray-700 rounded-lg px-2 py-1 text-xs"
                                       />
                                       <input
                                         type="number"
@@ -954,19 +977,19 @@ export default function AdminPage() {
                                         value={editSellingPrice}
                                         onChange={(e) => setEditSellingPrice(Number(e.target.value))}
                                         placeholder="Sell"
-                                        className="w-full bg-black border border-gray-700 rounded-lg px-2 py-1 text-sm"
+                                        className="w-full bg-black border border-gray-700 rounded-lg px-2 py-1 text-xs"
                                       />
                                     </div>
                                     <div className="flex gap-2">
                                       <button
                                         onClick={() => saveFlavorEdit(f.id)}
-                                        className="flex-1 bg-green-600 hover:bg-green-500 py-2 rounded-lg text-sm font-semibold"
+                                        className="flex-1 bg-green-600 hover:bg-green-500 py-1.5 rounded-lg text-xs font-semibold"
                                       >
                                         Save
                                       </button>
                                       <button
                                         onClick={() => setEditingId(null)}
-                                        className="flex-1 bg-gray-700 hover:bg-gray-600 py-2 rounded-lg text-sm font-semibold"
+                                        className="flex-1 bg-gray-700 hover:bg-gray-600 py-1.5 rounded-lg text-xs font-semibold"
                                       >
                                         Cancel
                                       </button>
@@ -975,11 +998,11 @@ export default function AdminPage() {
                                 ) : (
                                   <>
                                     <div className="mb-2">
-                                      <div className="font-bold text-sm">{f.name}</div>
-                                      <div className="text-xs text-gray-400 mt-1">
+                                      <div className="font-bold text-xs">{f.name}</div>
+                                      <div className="text-xs text-gray-400 mt-0.5">
                                         {f.code} • Stock: {f.stock}
                                       </div>
-                                      <div className="flex items-center gap-3 mt-2">
+                                      <div className="flex items-center gap-2 mt-1.5">
                                         <div className="text-xs text-green-400">
                                           ₱{f.sellingPrice.toFixed(2)}
                                         </div>
@@ -1001,14 +1024,14 @@ export default function AdminPage() {
                                           setEditCostPrice(f.costPrice);
                                           setEditSellingPrice(f.sellingPrice);
                                         }}
-                                        className="flex-1 bg-gray-800 hover:bg-gray-700 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1"
+                                        className="flex-1 bg-gray-800 hover:bg-gray-700 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1"
                                       >
                                         <Edit2 className="w-3 h-3" />
                                         Edit
                                       </button>
                                       <button
                                         onClick={() => deleteFlavor(f.id)}
-                                        className="px-3 py-2 bg-red-600 hover:bg-red-500 rounded-lg text-xs"
+                                        className="px-2 py-1.5 bg-red-600 hover:bg-red-500 rounded-lg text-xs"
                                       >
                                         <Trash2 className="w-3 h-3" />
                                       </button>
@@ -1026,37 +1049,37 @@ export default function AdminPage() {
               )}
 
               {(activeTab === "orders" || activeTab === "shipped" || activeTab === "delivered") && (
-                <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl border border-gray-700 p-6">
-                  <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-2xl font-bold flex items-center gap-2">
-                      {activeTab === "orders" && <><ShoppingCart className="w-6 h-6 text-yellow-500" />Preparing Orders</>}
-                      {activeTab === "shipped" && <><TrendingUp className="w-6 h-6 text-blue-500" />Shipped Orders</>}
-                      {activeTab === "delivered" && <><Box className="w-6 h-6 text-green-500" />Delivered Orders</>}
+                <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 p-4">
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-xl font-bold flex items-center gap-2">
+                      {activeTab === "orders" && <><ShoppingCart className="w-5 h-5 text-yellow-500" />Preparing Orders</>}
+                      {activeTab === "shipped" && <><TrendingUp className="w-5 h-5 text-blue-500" />Shipped Orders</>}
+                      {activeTab === "delivered" && <><Box className="w-5 h-5 text-green-500" />Delivered Orders</>}
                     </h2>
                     <button 
                       onClick={fetchOrders}
-                      className="px-4 py-2 bg-gray-900 hover:bg-gray-800 rounded-lg transition font-semibold text-sm"
+                      className="px-3 py-1.5 bg-gray-900 hover:bg-gray-800 rounded-lg transition font-semibold text-xs"
                     >
                       Refresh
                     </button>
                   </div>
 
                   {ordersLoading ? (
-                    <div className="text-center py-20">
-                      <div className="w-16 h-16 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                      <p className="text-gray-400">Loading orders...</p>
+                    <div className="text-center py-12">
+                      <div className="w-12 h-12 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                      <p className="text-gray-400 text-sm">Loading orders...</p>
                     </div>
                   ) : orders.filter(o => 
                     (activeTab === "orders" && o.status === "PREPARING") ||
                     (activeTab === "shipped" && o.status === "SHIPPED") ||
                     (activeTab === "delivered" && o.status === "DELIVERED")
                   ).length === 0 ? (
-                    <div className="text-center py-20 bg-gray-900/30 rounded-xl">
-                      <Package className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                      <p className="text-gray-400 text-lg">No orders in this category</p>
+                    <div className="text-center py-12 bg-gray-900/30 rounded-xl">
+                      <Package className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+                      <p className="text-gray-400">No orders in this category</p>
                     </div>
                   ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                       {orders
                         .filter(o => 
                           (activeTab === "orders" && o.status === "PREPARING") ||
@@ -1066,29 +1089,29 @@ export default function AdminPage() {
                         .map((o) => (
                         <div key={o.id} className="bg-gray-900 rounded-xl overflow-hidden border border-gray-700 hover:border-yellow-500/50 transition">
                           <div 
-                            className="p-5 cursor-pointer"
+                            className="p-4 cursor-pointer"
                             onClick={() => setExpanded(expanded === o.id ? null : o.id)}
                           >
                             <div className="flex justify-between items-start">
                               <div className="flex-1">
-                                <div className="flex items-center gap-3 mb-2">
-                                  <div className="font-bold text-lg">{o.customer}</div>
-                                  <div className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded">
-                                    Order #{o.id}
+                                <div className="flex items-center gap-2 mb-1.5">
+                                  <div className="font-bold text-base">{o.customer}</div>
+                                  <div className="text-xs text-gray-500 bg-gray-800 px-2 py-0.5 rounded">
+                                    #{o.id}
                                   </div>
                                 </div>
-                                <div className="text-2xl font-black text-green-400">
+                                <div className="text-xl font-black text-green-400">
                                   ₱{calculateOrderTotal(o).toFixed(2)}
                                 </div>
                               </div>
-                              <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-2">
                                 <select
                                   value={o.status}
                                   onChange={(e) =>
                                     updateOrderStatus(o.id, e.target.value as OrderRow["status"])
                                   }
                                   onClick={(e) => e.stopPropagation()}
-                                  className={`px-4 py-2 rounded-lg text-sm font-bold cursor-pointer ${
+                                  className={`px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer ${
                                     o.status === "PREPARING" ? "bg-yellow-600 hover:bg-yellow-500" :
                                     o.status === "SHIPPED" ? "bg-blue-600 hover:bg-blue-500" :
                                     "bg-green-600 hover:bg-green-500"
@@ -1099,17 +1122,17 @@ export default function AdminPage() {
                                   <option value="DELIVERED">DELIVERED</option>
                                 </select>
                                 {expanded === o.id ? (
-                                  <ChevronDown className="w-5 h-5 text-gray-400" />
+                                  <ChevronDown className="w-4 h-4 text-gray-400" />
                                 ) : (
-                                  <ChevronRight className="w-5 h-5 text-gray-400" />
+                                  <ChevronRight className="w-4 h-4 text-gray-400" />
                                 )}
                               </div>
                             </div>
                           </div>
 
                           {expanded === o.id && (
-                            <div className="border-t border-gray-800 bg-black/30 p-5">
-                              <div className="space-y-4">
+                            <div className="border-t border-gray-800 bg-black/30 p-4">
+                              <div className="space-y-3">
                                 {(() => {
                                   const grouped: Record<string, Record<string, OrderItemRow[]>> = {};
                                   
@@ -1123,9 +1146,9 @@ export default function AdminPage() {
                                   });
 
                                   return Object.entries(grouped).map(([catName, brands]) => (
-                                    <div key={catName} className="space-y-3">
-                                      <div className="text-sm font-bold text-blue-400 flex items-center gap-2">
-                                        <Package className="w-4 h-4" />
+                                    <div key={catName} className="space-y-2">
+                                      <div className="text-xs font-bold text-blue-400 flex items-center gap-1.5">
+                                        <Package className="w-3 h-3" />
                                         {catName}
                                       </div>
                                       {Object.entries(brands).map(([brandName, items]) => {
@@ -1134,31 +1157,31 @@ export default function AdminPage() {
                                         );
                                         
                                         return (
-                                          <div key={brandName} className="bg-gray-900 rounded-lg p-4 ml-6 border border-gray-800">
-                                            <div className="font-bold text-yellow-400 mb-3 flex items-center gap-2">
-                                              <ShoppingBag className="w-4 h-4" />
+                                          <div key={brandName} className="bg-gray-900 rounded-lg p-3 ml-4 border border-gray-800">
+                                            <div className="font-bold text-yellow-400 mb-2 flex items-center gap-1.5 text-xs">
+                                              <ShoppingBag className="w-3 h-3" />
                                               {brandName}
                                             </div>
-                                            <div className="space-y-2">
+                                            <div className="space-y-1.5">
                                               {items.map((it) => (
-                                                <div key={it.id} className="flex justify-between items-center py-2 border-b border-gray-800 last:border-0">
+                                                <div key={it.id} className="flex justify-between items-center py-1.5 border-b border-gray-800 last:border-0">
                                                   <div className="flex-1">
-                                                    <div className="font-medium">{it.flavor.name}</div>
+                                                    <div className="font-medium text-xs">{it.flavor.name}</div>
                                                     <div className="text-xs text-gray-500">
                                                       #{it.flavor.code} • ₱{it.flavor.sellingPrice.toFixed(2)} × {it.quantity}
                                                     </div>
                                                   </div>
                                                   <div className="text-right">
-                                                    <div className="font-bold text-lg">×{it.quantity}</div>
-                                                    <div className="text-green-400 text-sm font-semibold">
+                                                    <div className="font-bold text-sm">×{it.quantity}</div>
+                                                    <div className="text-green-400 text-xs font-semibold">
                                                       ₱{(it.flavor.sellingPrice * it.quantity).toFixed(2)}
                                                     </div>
                                                   </div>
                                                 </div>
                                               ))}
                                             </div>
-                                            <div className="text-right pt-3 mt-3 border-t border-gray-800">
-                                              <div className="text-sm font-bold text-yellow-400">
+                                            <div className="text-right pt-2 mt-2 border-t border-gray-800">
+                                              <div className="text-xs font-bold text-yellow-400">
                                                 Subtotal: ₱{brandSubtotal.toFixed(2)}
                                               </div>
                                             </div>
@@ -1168,9 +1191,9 @@ export default function AdminPage() {
                                     </div>
                                   ));
                                 })()}
-                                <div className="text-right pt-4 border-t-2 border-gray-700 mt-4">
-                                  <div className="text-sm text-gray-400 mb-1">Grand Total</div>
-                                  <div className="text-3xl font-black text-green-400">
+                                <div className="text-right pt-3 border-t-2 border-gray-700 mt-3">
+                                  <div className="text-xs text-gray-400 mb-0.5">Grand Total</div>
+                                  <div className="text-2xl font-black text-green-400">
                                     ₱{calculateOrderTotal(o).toFixed(2)}
                                   </div>
                                 </div>

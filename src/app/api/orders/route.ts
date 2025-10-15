@@ -20,6 +20,7 @@ export async function GET(req: Request) {
                 name: true,
                 code: true,
                 sellingPrice: true,
+                costPrice: true,
                 brand: {
                   select: {
                     name: true,
