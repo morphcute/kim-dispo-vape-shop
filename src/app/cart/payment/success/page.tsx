@@ -1,6 +1,4 @@
 "use client";
-export const dynamic = "force-dynamic"; 
-export const fetchCache = "force-no-store";
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -8,18 +6,16 @@ import { CheckCircle, Package, Home, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useCart } from "@/contexts/CartContext";
 
-export default function PaymentSuccessPage() {
+export default function PaymentSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { clearCart } = useCart();
   const [isProcessing, setIsProcessing] = useState(true);
 
   useEffect(() => {
-    // Optionally get the session_id (for PayMongo or order tracking)
     const sessionId = searchParams.get("session_id");
     console.log("Payment session:", sessionId);
 
-    // Clear cart after successful payment
     const timer = setTimeout(() => {
       clearCart();
       setIsProcessing(false);
@@ -44,7 +40,6 @@ export default function PaymentSuccessPage() {
       <div className="max-w-2xl w-full">
         {/* Success Card */}
         <div className="bg-gray-900 rounded-2xl border border-gray-700 shadow-2xl overflow-hidden">
-          {/* Header with animated checkmark */}
           <div className="bg-gradient-to-r from-green-600 to-green-500 px-8 py-12 text-center">
             <div className="inline-flex items-center justify-center w-24 h-24 bg-white/20 rounded-full mb-6 animate-bounce">
               <CheckCircle className="w-16 h-16 text-white" />
@@ -53,25 +48,22 @@ export default function PaymentSuccessPage() {
               Payment Successful!
             </h1>
             <p className="text-green-50 text-lg">
-              Your order has been confirmed and is being processed.
+              Your order has been confirmed and is being processed
             </p>
           </div>
 
-          {/* Body */}
           <div className="p-8 space-y-6">
-            {/* Success Message */}
             <div className="bg-green-900/20 border border-green-700/50 rounded-xl p-6 text-center">
               <Package className="w-12 h-12 text-green-400 mx-auto mb-3" />
               <h2 className="text-xl font-bold text-white mb-2">
                 Thank you for your purchase!
               </h2>
               <p className="text-gray-300">
-                We've received your payment and your order is now being prepared. 
+                We've received your payment and your order is now being prepared.
                 You'll receive updates on your order status shortly.
               </p>
             </div>
 
-            {/* What's Next */}
             <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
               <h3 className="text-lg font-bold text-yellow-400 mb-4">
                 What happens next?
@@ -82,12 +74,8 @@ export default function PaymentSuccessPage() {
                     <CheckCircle className="w-4 h-4 text-green-400" />
                   </div>
                   <div>
-                    <p className="font-semibold text-white">
-                      Order Confirmation
-                    </p>
-                    <p className="text-sm">
-                      We're processing your order right now.
-                    </p>
+                    <p className="font-semibold text-white">Order Confirmation</p>
+                    <p className="text-sm">We're processing your order right now</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
@@ -95,12 +83,8 @@ export default function PaymentSuccessPage() {
                     <Package className="w-4 h-4 text-yellow-400" />
                   </div>
                   <div>
-                    <p className="font-semibold text-white">
-                      Order Preparation
-                    </p>
-                    <p className="text-sm">
-                      Your items will be prepared for pickup or delivery.
-                    </p>
+                    <p className="font-semibold text-white">Order Preparation</p>
+                    <p className="text-sm">Your items will be prepared for pickup or delivery</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
@@ -109,15 +93,12 @@ export default function PaymentSuccessPage() {
                   </div>
                   <div>
                     <p className="font-semibold text-white">Ready for Pickup</p>
-                    <p className="text-sm">
-                      We'll notify you when your order is ready.
-                    </p>
+                    <p className="text-sm">We'll notify you when your order is ready</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
               <Link
                 href="/"
@@ -128,7 +109,6 @@ export default function PaymentSuccessPage() {
               </Link>
             </div>
 
-            {/* Support Info */}
             <div className="text-center pt-6 border-t border-gray-700">
               <p className="text-gray-400 text-sm">
                 Need help? Contact us at{" "}
@@ -140,7 +120,6 @@ export default function PaymentSuccessPage() {
           </div>
         </div>
 
-        {/* Additional Info */}
         <div className="mt-6 text-center">
           <p className="text-gray-500 text-sm">
             Payment processed securely via PayMongo
