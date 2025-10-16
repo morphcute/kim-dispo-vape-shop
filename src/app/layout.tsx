@@ -15,24 +15,30 @@ export default function RootLayout({
         <Providers>
           <AdminProvider>
             {/* Header with logo */}
-            <header className="bg-black border-b border-yellow-600 sticky top-0 z-50">
-              <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
+            <header className="bg-black border-b border-yellow-600/30 sticky top-0 z-50 backdrop-blur-sm">
+              <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
                 {/* Logo */}
-                <Link href="/" className="flex items-center gap-2">
-                  <div className="w-10 h-10 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-lg flex items-center justify-center">
+                <Link href="/" className="flex items-center gap-3 group">
+                  <div className="w-10 h-10 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-lg flex items-center justify-center shadow-lg group-hover:shadow-yellow-500/50 transition-shadow">
                     <span className="text-black font-bold text-lg">KD</span>
                   </div>
-                  <span className="text-yellow-400 font-bold text-lg hidden sm:block">  </span>
                 </Link>
                 
-                <div className="flex items-center gap-4">
-                  <Link href="/" className="text-yellow-400 hover:text-yellow-300">
+                {/* Navigation Links */}
+                <nav className="flex items-center gap-3">
+                  <Link 
+                    href="/" 
+                    className="px-4 py-2 text-sm font-medium text-yellow-400 border border-yellow-400/50 hover:bg-yellow-400 hover:text-black hover:border-yellow-400 rounded-lg transition-all duration-200 ease-in-out"
+                  >
                     Storefront
                   </Link>
-                  <Link href="/admin" className="text-yellow-400 hover:text-yellow-300">
+                  <Link 
+                    href="/admin" 
+                    className="px-4 py-2 text-sm font-medium text-yellow-400 border border-yellow-400/50 hover:bg-yellow-400 hover:text-black hover:border-yellow-400 rounded-lg transition-all duration-200 ease-in-out"
+                  >
                     Admin
                   </Link>
-                </div>
+                </nav>
               </div>
             </header>
             {children}

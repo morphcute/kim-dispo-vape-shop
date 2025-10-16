@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Truck, Package, CheckCircle, Undo2, Eye, ChevronDown, ChevronUp } from "lucide-react";
+import { Truck, Package, CheckCircle, Undo2, Eye, ChevronDown, ChevronUp, Trash2, Search, X } from "lucide-react";
 import { useAdmin } from "./AdminProvider";
+import { useRouter } from "next/navigation";
 
 interface Order {
   id: number;
@@ -38,60 +39,160 @@ interface OrdersTableProps {
 
 export default function OrdersTable({ title, status, nextStatus, previousStatus }: OrdersTableProps) {
   const { headers } = useAdmin();
+  const router = useRouter();
+  const [allOrders, setAllOrders] = useState<Order[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
     fetchOrders();
-  }, [status]);
+  }, [status, headers]);
 
-  // In your OrdersTable.tsx - update the fetchOrders function
-async function fetchOrders() {
-  try {
-    const res = await fetch("/api/orders", { headers });
-    
-    if (!res.ok) {
-      if (res.status === 401) {
-        console.error("Unauthorized - redirecting to login");
-        // You might want to redirect to login here
+  useEffect(() => {
+    filterOrders();
+  }, [searchQuery, allOrders, status]);
+
+  async function fetchOrders() {
+    try {
+      setError(null);
+      
+      if (!headers || Object.keys(headers).length === 0) {
+        console.error("No auth headers available");
+        setError("Authentication required");
+        router.push("/admin/login");
         return;
       }
-      throw new Error(`HTTP error! status: ${res.status}`);
+
+      const res = await fetch("/api/orders", { 
+        headers,
+        cache: 'no-store'
+      });
+      
+      if (!res.ok) {
+        if (res.status === 401) {
+          console.error("Unauthorized - redirecting to login");
+          setError("Unauthorized access");
+          router.push("/admin/login");
+          return;
+        }
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      
+      const contentType = res.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        const text = await res.text();
+        console.error("Non-JSON response:", text);
+        throw new Error(`Expected JSON but got: ${text.substring(0, 100)}`);
+      }
+      
+      const fetchedOrders: Order[] = await res.json();
+      setAllOrders(fetchedOrders);
+      
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      setError(error instanceof Error ? error.message : "Failed to fetch orders");
+      setOrders([]);
     }
-    
-    const contentType = res.headers.get("content-type");
-    if (!contentType || !contentType.includes("application/json")) {
-      const text = await res.text();
-      throw new Error(`Expected JSON but got: ${text}`);
-    }
-    
-    const allOrders: Order[] = await res.json();
-    
-    const filteredOrders = allOrders.filter(order => 
-      order.status === status
-    );
-    
-    setOrders(filteredOrders);
-  } catch (error) {
-    console.error("Error fetching orders:", error);
-    setOrders([]); // Set empty array on error
   }
-}
+
+  function filterOrders() {
+    if (!searchQuery.trim()) {
+      // No search query, show only current status orders
+      setIsSearching(false);
+      const filteredOrders = allOrders.filter(order => order.status === status);
+      setOrders(filteredOrders);
+      return;
+    }
+
+    // Search across ALL orders regardless of status
+    setIsSearching(true);
+    const query = searchQuery.toLowerCase().trim();
+    
+    const searchResults = allOrders.filter(order => {
+      // Search by order ID
+      if (order.id.toString().includes(query)) return true;
+      
+      // Search by customer name
+      if (order.customer.toLowerCase().includes(query)) return true;
+      
+      // Search by address
+      if (order.address.toLowerCase().includes(query)) return true;
+      
+      // Search by payment method
+      if (order.paymentMethod.toLowerCase().includes(query)) return true;
+      
+      // Search by status
+      if (order.status.toLowerCase().includes(query)) return true;
+      
+      // Search by product name or code
+      const hasMatchingItem = order.items.some(item => 
+        item.flavor.name.toLowerCase().includes(query) ||
+        item.flavor.code.toLowerCase().includes(query) ||
+        item.flavor.brand.name.toLowerCase().includes(query)
+      );
+      
+      return hasMatchingItem;
+    });
+
+    setOrders(searchResults);
+  }
 
   async function updateOrderStatus(orderId: number, newStatus: string) {
     try {
-      await fetch(`/api/orders/${orderId}/status`, {
+      const res = await fetch(`/api/orders/${orderId}/status`, {
         method: "PUT",
         headers,
         body: JSON.stringify({ status: newStatus }),
       });
+
+      if (!res.ok) {
+        if (res.status === 401) {
+          router.push("/admin/login");
+          return;
+        }
+        throw new Error("Failed to update order status");
+      }
       
       fetchOrders();
-      setExpandedOrder(null); // Close expanded view after update
+      setExpandedOrder(null);
     } catch (error) {
       console.error("Error updating order status:", error);
+      alert("Failed to update order status");
     }
+  }
+
+  async function deleteOrder(orderId: number) {
+    try {
+      const res = await fetch(`/api/orders/${orderId}`, {
+        method: "DELETE",
+        headers,
+      });
+
+      if (!res.ok) {
+        if (res.status === 401) {
+          router.push("/admin/login");
+          return;
+        }
+        throw new Error("Failed to delete order");
+      }
+      
+      fetchOrders();
+      setDeleteConfirm(null);
+      setSelectedOrder(null);
+    } catch (error) {
+      console.error("Error deleting order:", error);
+      alert("Failed to delete order");
+    }
+  }
+
+  function clearSearch() {
+    setSearchQuery("");
+    setIsSearching(false);
   }
 
   function formatDate(dateString: string) {
@@ -201,6 +302,12 @@ async function fetchOrders() {
             <Eye className="w-4 h-4" />
             View
           </button>
+          <button
+            onClick={() => setDeleteConfirm(order.id)}
+            className="bg-red-600 hover:bg-red-500 text-white px-3 py-2 rounded text-sm flex items-center gap-1"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
         </div>
 
         {/* Expandable Content */}
@@ -246,7 +353,55 @@ async function fetchOrders() {
 
   return (
     <div className="p-4">
-      <h1 className="text-xl font-bold text-yellow-400 mb-4">{title}</h1>
+      {/* Header with Search */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+        <h1 className="text-xl font-bold text-yellow-400">{title}</h1>
+        
+        {/* Search Bar */}
+        <div className="relative w-full sm:w-96">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search all orders (ID, customer, product, status...)"
+            className="w-full bg-gray-800 border border-gray-600 rounded-lg pl-10 pr-10 py-2 text-white placeholder-gray-500 focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+          />
+          {searchQuery && (
+            <button
+              onClick={clearSearch}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Search Results Info */}
+      {isSearching && (
+        <div className="bg-blue-900/30 border border-blue-700 text-blue-200 px-4 py-3 rounded-lg mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Search className="w-5 h-5" />
+            <span>
+              Found <strong>{orders.length}</strong> order{orders.length !== 1 ? 's' : ''} matching "{searchQuery}" across all statuses
+            </span>
+          </div>
+          <button
+            onClick={clearSearch}
+            className="text-blue-200 hover:text-white underline text-sm"
+          >
+            Clear search
+          </button>
+        </div>
+      )}
+
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-900/50 border border-red-600 text-red-200 px-4 py-3 rounded-lg mb-4">
+          <strong>Error:</strong> {error}
+        </div>
+      )}
 
       {/* Mobile View */}
       <div className="block lg:hidden">
@@ -303,13 +458,21 @@ async function fetchOrders() {
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <div className="flex flex-col gap-1">
-                      <button
-                        onClick={() => setSelectedOrder(order)}
-                        className="bg-purple-600 hover:bg-purple-500 text-white px-2 py-1 rounded text-xs flex items-center gap-1 w-full justify-center"
-                      >
-                        <Eye className="w-3 h-3" />
-                        View
-                      </button>
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => setSelectedOrder(order)}
+                          className="bg-purple-600 hover:bg-purple-500 text-white px-2 py-1 rounded text-xs flex items-center gap-1 flex-1 justify-center"
+                        >
+                          <Eye className="w-3 h-3" />
+                          View
+                        </button>
+                        <button
+                          onClick={() => setDeleteConfirm(order.id)}
+                          className="bg-red-600 hover:bg-red-500 text-white px-2 py-1 rounded text-xs flex items-center gap-1"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
                       
                       <div className="flex gap-1">
                         {prevButton && (
@@ -338,14 +501,55 @@ async function fetchOrders() {
           </tbody>
         </table>
 
-        {orders.length === 0 && (
+        {orders.length === 0 && !error && !isSearching && (
           <div className="text-center py-12">
             <Package className="w-16 h-16 text-gray-600 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-400">No {title.toLowerCase()}</h3>
             <p className="text-gray-500">There are no orders in this status.</p>
           </div>
         )}
+
+        {orders.length === 0 && isSearching && (
+          <div className="text-center py-12">
+            <Search className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-400">No results found</h3>
+            <p className="text-gray-500">Try a different search term</p>
+          </div>
+        )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-gray-800 border border-red-700 rounded-xl max-w-md w-full p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="bg-red-600/20 p-3 rounded-full">
+                <Trash2 className="w-6 h-6 text-red-500" />
+              </div>
+              <h3 className="text-lg font-bold text-white">Delete Order?</h3>
+            </div>
+            
+            <p className="text-gray-300 mb-6">
+              Are you sure you want to delete order #{deleteConfirm}? This action cannot be undone.
+            </p>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => deleteOrder(deleteConfirm)}
+                className="flex-1 bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-lg transition-colors font-semibold"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Order Items Modal */}
       {selectedOrder && (

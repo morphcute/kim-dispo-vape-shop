@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { DollarSign, TrendingUp, ShoppingCart, Box } from "lucide-react";
-import StatsCard from "./../components/StatsCard";
-import { useAdmin } from "./../components/AdminProvider";
+import StatsCard from "../components/StatsCard";
+import { useAdmin } from "../components/AdminProvider";
+import { StatsGridSkeleton } from "@/components/Skeleton";
 
 export default function DashboardPage() {
   const { headers } = useAdmin();
@@ -14,8 +15,20 @@ export default function DashboardPage() {
     fetch("/api/orders", { headers })
       .then((r) => (r.ok ? r.json() : []))
       .then(setOrders)
+      .catch(console.error)
       .finally(() => setLoading(false));
   }, [headers]);
+
+  if (loading) {
+    return (
+      <div>
+        <h1 className="text-xl lg:text-2xl font-bold mb-4 lg:mb-6 text-yellow-400">
+          Dashboard Overview
+        </h1>
+        <StatsGridSkeleton count={4} />
+      </div>
+    );
+  }
 
   const delivered = orders.filter((o) => o.status === "DELIVERED");
   const totalRevenue = delivered.reduce((sum, o) => sum + (o.Total || 0), 0);
@@ -32,8 +45,6 @@ export default function DashboardPage() {
 
   const totalOrders = orders.length;
   const preparing = orders.filter((o) => o.status === "PREPARING").length;
-
-  if (loading) return <p className="text-gray-400">Loading dashboard...</p>;
 
   return (
     <div>

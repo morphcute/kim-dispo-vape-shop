@@ -1,4 +1,3 @@
-// src/app/admin/components/AdminProvider.tsx - FIXED VERSION
 "use client";
 
 import { createContext, useContext, ReactNode, useState, useEffect } from 'react';
@@ -9,38 +8,88 @@ interface AdminContextType {
   setToken: (token: string) => void;
   logout: () => void;
   isAdmin: boolean;
+  isLoading: boolean;
 }
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
 
+const TOKEN_EXPIRY_HOURS = 2;
+
+interface StoredAuth {
+  token: string;
+  expiresAt: number;
+}
+
 export function AdminProvider({ children }: { children: ReactNode }) {
   const [token, setTokenState] = useState<string | null>(null);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const isTokenExpired = (expiresAt: number): boolean => {
+    return Date.now() > expiresAt;
+  };
 
   useEffect(() => {
-    // Load token from localStorage on component mount
     if (typeof window !== 'undefined') {
-      const storedToken = localStorage.getItem('adminToken');
-      if (storedToken) {
-        setTokenState(storedToken);
+      try {
+        const storedAuth = sessionStorage.getItem('adminAuth');
+        if (storedAuth) {
+          const parsed: StoredAuth = JSON.parse(storedAuth);
+          
+          if (isTokenExpired(parsed.expiresAt)) {
+            sessionStorage.removeItem('adminAuth');
+            setTokenState(null);
+          } else {
+            setTokenState(parsed.token);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading auth token:', error);
+        sessionStorage.removeItem('adminAuth');
       }
-      setIsInitialized(true);
+      setIsLoading(false);
     }
   }, []);
 
   const setToken = (newToken: string) => {
     setTokenState(newToken);
     if (typeof window !== 'undefined') {
-      localStorage.setItem('adminToken', newToken);
+      const expiresAt = Date.now() + (TOKEN_EXPIRY_HOURS * 60 * 60 * 1000);
+      const authData: StoredAuth = {
+        token: newToken,
+        expiresAt
+      };
+      sessionStorage.setItem('adminAuth', JSON.stringify(authData));
     }
   };
 
   const logout = () => {
     setTokenState(null);
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('adminToken');
+      sessionStorage.removeItem('adminAuth');
     }
   };
+
+  useEffect(() => {
+    if (!token) return;
+
+    const interval = setInterval(() => {
+      if (typeof window !== 'undefined') {
+        try {
+          const storedAuth = sessionStorage.getItem('adminAuth');
+          if (storedAuth) {
+            const parsed: StoredAuth = JSON.parse(storedAuth);
+            if (isTokenExpired(parsed.expiresAt)) {
+              logout();
+            }
+          }
+        } catch (error) {
+          console.error('Error checking token expiry:', error);
+        }
+      }
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [token]);
 
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
@@ -53,12 +102,8 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     setToken,
     logout,
     isAdmin: !!token,
+    isLoading,
   };
-
-  // Show minimal loading only during initial mount
-  if (!isInitialized) {
-    return null; // Return null instead of loading screen to prevent flash
-  }
 
   return (
     <AdminContext.Provider value={value}>

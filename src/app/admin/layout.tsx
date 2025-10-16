@@ -1,52 +1,73 @@
-// src/app/admin/layout.tsx - SIMPLIFIED VERSION
 "use client";
 
-import { useAdmin } from "./components/AdminProvider";
-import Sidebar from "./components/Sidebar";
-import Header from "./components/Header";
+import { AdminProvider, useAdmin } from "./components/AdminProvider";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
+import Sidebar from "./components/Sidebar";
+import Link from "next/link";
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { token } = useAdmin();
-  const router = useRouter();
+function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-
+  const router = useRouter();
+  const { token, isLoading } = useAdmin();
   const isLoginPage = pathname === "/admin/login";
-  const isRootAdmin = pathname === "/admin";
 
+  // Redirect logic
   useEffect(() => {
-    // Only redirect if on a protected page without token
-    if (!token && !isLoginPage && !isRootAdmin) {
-      router.replace("/admin/login");
-    }
-  }, [token, pathname, router, isLoginPage, isRootAdmin]);
+    if (isLoading) return;
 
-  // Login page - render without layout
+    if (!token && !isLoginPage) {
+      router.replace("/admin/login");
+    } else if (token && isLoginPage) {
+      router.replace("/admin/dashboard");
+    }
+  }, [token, isLoading, isLoginPage, router]);
+
+  // Show loading during initial check
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-950">
+        <div className="text-center">
+          <div className="w-16 h-16 mx-auto mb-4 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-gray-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Login page (no sidebar, no header)
   if (isLoginPage) {
     return <>{children}</>;
   }
 
-  // Root admin page - render without layout (will self-redirect)
-  if (isRootAdmin) {
-    return <>{children}</>;
-  }
-
-  // Protected pages - show loading if no token yet
+  // Protected pages (with sidebar)
   if (!token) {
-    return null; // Will redirect via useEffect
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-950">
+        <div className="text-center">
+          <div className="w-16 h-16 mx-auto mb-4 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-gray-400">Redirecting to login...</p>
+        </div>
+      </div>
+    );
   }
 
-  // Authenticated - show full layout
   return (
-    <div className="flex min-h-screen bg-gray-950 text-gray-100">
+    <div className="min-h-screen bg-gray-950 text-white flex">
       <Sidebar />
-      <div className="flex flex-col flex-1">
-        <Header />
-        <main className="flex-1 p-6 overflow-y-auto">
+      <main className="flex-1 lg:ml-0 min-h-screen overflow-auto">
+        <div className="p-4 lg:p-6">
           {children}
-        </main>
-      </div>
+        </div>
+      </main>
     </div>
+  );
+}
+
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <AdminProvider>
+      <AdminLayoutContent>{children}</AdminLayoutContent>
+    </AdminProvider>
   );
 }
